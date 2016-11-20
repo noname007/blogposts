@@ -1,0 +1,40 @@
+---
+layout: default
+---
+<style type="text/css">
+.pay{
+	border:0px solid;
+	background-color:#F6Fef6;
+	margin: 3px;
+	padding: 5px;
+	float:left;
+	vertical-align: middle;
+}
+.pay img{
+	width:calc(45% - 30px / 2)
+	margin: 3px;
+	float:left;
+	padding: 3px;
+	max-width: 40%;
+    vertical-align: middle;
+}
+</style>
+
+<article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">{{ page.title }}</h1>
+    <p class="post-meta"><time datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">{{ page.date | date: "%b %-d, %Y" }}</time>{% if page.author %} • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">{{ page.author }}</span></span>{% endif %}</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    {{ content }}
+  </div>
+  <div class="pay">
+	如果文章对您有点帮助，那是我最大的荣幸。
+	<br/>
+	<img src="{{site.baseurl}}/assets/imgs/wechat.png" >
+	<img src="{{site.baseurl}}/assets/imgs/alipay.jpg">
+  </div>
+</article>
+

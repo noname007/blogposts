@@ -1,0 +1,7 @@
+break sys_clone
+break do_fork
+break copy_process
+break dup_task_struct
+break alloc_thread_info_node
+break arch_dup_task_struct
+break copy_thread

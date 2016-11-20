@@ -1,0 +1,17 @@
+---
+layout: null
+---
+<?xml version="1.0" encoding="utf-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <sitemap>
+        <loc>http://blog.soul11201.com/sitemap.xml</loc>
+        <lastmod>{{ site.time | date: "%Y-%m-%d" }}</lastmod>
+    </sitemap>
+
+    <sitemap>
+        <loc>http://hexo.soul11201.com/atom.xml</loc>
+        <lastmod>2016-05-07</lastmod>
+    </sitemap>
+ 
+</sitemapindex>
+

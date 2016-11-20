@@ -1,0 +1,22 @@
+a { text-decoration: none; color: #999; }
+a:hover { text-decoration: underline; }
+pre { margin: 0; white-space: pre-wrap; }
+body { font-size: 12px; line-height: 150%; position: relative; width: 680px; margin: 20px auto; border: 3px solid #cecece; padding: 15px; }
+table { position: relative; border-collapse: collapse; border-spacing: 0; }
+th, td { font-weight: normal; text-align: left; padding: 2px 0; vertical-align: top; }
+th { width: 65px; }
+fieldset { border: 1px solid #999; padding: 0 10px; margin: 0; }
+legend { font-size: 11px; color: #555; }
+.clearfix { clear: both; }
+.pull-right { float: right; }
+.photo { position: relative; display: inline-block; float: left; width: 100px; height: 100px; border: 2px solid #ddd; border-radius: 3px; font-size: 0; padding: 1px; margin-right: 20px; }
+.photo img { width: 100%; }
+.split { display: inline-block; margin: 0 10px; font-weight: normal; color: #ddd; }
+.pofile { float: right; width: 545px; }
+.box { margin-bottom: 15px; }
+.box-header { font-size: 14px; font-weight: bold; padding: 3px 0; border-bottom: 1px solid #e0e0e0; color: #213b81; }
+.box-inner { padding: 6px 0; }
+.item-wrapper + .item-wrapper { margin-top: 12px; }
+.item-title { font-weight: bold; font-size: 12px; color: #333; margin: 0; }
+.sub-item + .sub-item { border-top: 1px dashed #999; margin-top: 8px; padding: 8px 0; }
+

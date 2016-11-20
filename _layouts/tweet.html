@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+{% include head.html %}
+
+<head>
+  <link rel="stylesheet" href="{{ '/css/tweet.css' | prepend: site.baseurl }}">
+  <style type="text/css">
+.pay{
+	border:0px solid;
+	background-color:#F6Fef6;
+	margin: 3px;
+	padding: 5px;
+	float:left;
+	vertical-align: middle;
+}
+.pay img{
+	width:calc(45% - 30px / 2)
+	margin: 3px;
+	float:left;
+	padding: 3px;
+	max-width: 25%;
+    vertical-align: middle;
+}
+</style>
+</head>
+
+
+  <body>
+	
+    <div class="tweet">
+        {{ content }}
+    </div>
+	
+	  <div class="pay">
+		如果文章对您有点帮助，那是我最大的荣幸。
+		<br/>
+		<img src="{{site.baseurl}}/assets/imgs/wechat.png" >
+		<img src="{{site.baseurl}}/assets/imgs/alipay.jpg">
+	  </div>
+  </body>
+
+</html>

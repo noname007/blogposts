@@ -1,0 +1,53 @@
+<footer class="site-footer">
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+  <div class="wrapper">
+
+    <!-- <h2 class="footer-heading">{{ site.title }}</h2> -->
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+			<li>{{ site.title }}</li>
+          <li>联系方式：<a href="mailto:{{ site.email }}">{{ site.email }}</a></li>
+		  <li><script src="http://s4.cnzz.com/z_stat.php?id=1259061352&web_id=1259061352" language="JavaScript"></script> </li>
+        </ul>
+      </div>
+	
+      <div class="footer-col footer-col-2">
+		
+        <ul class="social-media-list">
+          {% if site.github_username %}
+          <li>
+            {% include icon-github.html username=site.github_username %}
+          </li>
+          {% endif %}
+
+          {% if site.twitter_username %}
+          <li>
+            {% include icon-twitter.html username=site.twitter_username %}
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>{{ site.description }}</p>
+      </div >
+	 
+    </div>
+
+  </div>
+</footer>

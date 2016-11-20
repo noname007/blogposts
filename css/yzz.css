@@ -1,0 +1,12 @@
+
+.box_yzz{
+	border:3px solid rgba(119, 119, 119, 0.811765);
+	margin: 0;
+	padding: 3px;
+}
+
+.box_yzz_inner {
+	border:1px solid rgba(119, 119, 119, 0.811765);
+	margin: 0;
+	padding: 10px;
+}
