@@ -7,7 +7,7 @@
 	date_default_timezone_set('prc');
 	$title = $argv[1];
 	echo $filename = date('Y-m-d').'-'.$title.'.md',PHP_EOL;
-	
+
 	if($argc == 3){
 		$title = $argv[2];
 	}
@@ -24,7 +24,9 @@ date:   $date_time +0800
 categories: 随笔
 published: true
 ---
+* 目录
+{:toc}
+
 LAYOUT;
 
 	file_put_contents($filename, $layout_header);
-
