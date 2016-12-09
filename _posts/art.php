@@ -21,7 +21,7 @@
 layout: post
 title:  "$title"
 date:   $date_time +0800
-categories: 随笔
+categories: notes
 published: true
 ---
 * 目录
