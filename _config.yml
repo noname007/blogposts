@@ -33,3 +33,11 @@ gems:
 exclude:
   - Gemfile
   - Gemfile.lock
+
+comments:
+    provider:
+         name: duoshuo
+    duoshuo:
+        short_name: soul11201
+    disqus:
+        short_name: soul11201
