@@ -14,6 +14,7 @@ published: true
 
 
 #### 在控制面板中启用linux子系统
+ * 不要忘记重启，:)
  ![](/assets/1xa3.png)
 
 #### 打开bash
