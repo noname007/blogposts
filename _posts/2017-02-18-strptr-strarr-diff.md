@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "字符数组与字符串指针数组"
+title:  "字符数组与字符串指针区别"
 date:   2017-02-18 21:27:40 +0800
 categories: notes
 published: true
