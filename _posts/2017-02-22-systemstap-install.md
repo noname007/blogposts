@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "systemstap 安装"
+title:  "systemtap 安装"
 date:   2017-02-22 17:28:45 +0800
 
 tags:
