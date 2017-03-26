@@ -35,8 +35,9 @@ exclude:
   - Gemfile.lock
 
 comments:
+    enable: false
     provider:
-         name: duoshuo
+         name: disqus
     duoshuo:
         short_name: soul11201
     disqus:

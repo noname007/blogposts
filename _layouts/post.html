@@ -37,5 +37,6 @@ layout: default
 	<img src="{{site.baseurl}}/assets/imgs/alipay.jpg">
   </div> -->
 </article>
-
+{% if site.comments.enable %}
 {% include comments/{{site.comments.provider.name}}.html %}
+{% endif %}
