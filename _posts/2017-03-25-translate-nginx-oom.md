@@ -2,7 +2,10 @@
 layout: post
 title:  "Openresty OOM 臭虫"
 date:   2017-03-25 17:46:27 +0800
-categories: notes
+categories:
+- notes
+- translate
+
 tags:
 - openresty
 - OOM
@@ -20,22 +23,22 @@ published: true
 __在[lua-nginx-module][lua-nginx-moduleL1294] 中，一个内存相关的黑魔法导致冗余的大内存分配。__
 
 
-最近我在线上改变了一个的 Nginx 配置，导致 OOM（Out of Memory） killer 在 Nginx 加载新配置的过程中 杀死了 Nginx 进程。这里是添加到配置中的行：
+最近我在线上改变了一个的 Nginx 配置，导致 OOM（Out of Memory） killer 在 Nginx 加载新配置的过程中 杀死了 Nginx 进程。这是添加到配置中的行：
 
 	lua_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
 
-这篇文章中我将会阐述我是如何找出这个问题的根本原因、记录在这个过程中我学习的用到的工具。这篇文章内容细节非常琐碎。在进行深入阅读前，我先列下我使用的软件栈：
+在这篇文章中，我将会阐述我是如何找出这个问题的根本原因、记录在这个过程中现学现用的工具。这篇文章内容细节非常琐碎。在进行深入阅读前，先列下使用的软件栈：
 
 - Openssl `1.0.2j`
 - OS:`Ubuntu Trusty with Linux 3.19.0-80-generic`
 - Nginx:`Openresty bundle 1.11.2`
 - glibc:`Ubuntu EGLIBC 2.19-0ubuntu6.9`
 
-我们从 OOM Killer 开始。它是一个 Linux 内核函数，当内核不能分配更多的内存空间的时候它将会被触发。OOM Killer 的任务是探测那个进程是对系统危害最大（参考[ https://linux-mm.org/OOM_Killer](https://linux-mm.org/OOM_Killer),获取更多关于坏评分是如何计算出来的信息），一旦检测出来，将会杀死进程、释放内存。这意味着 在我的这种情况中 ，Nginx 是在申请越来越多的内存，最终内核申请内存失败并且触发OOM Killer，杀死 Nginx 进程。
+我们从 OOM Killer 开始。它是一个 Linux 内核函数，当内核不能分配更多的内存空间的时候它将会被触发。OOM Killer 的任务是探测哪一个进程是对系统危害最大（参考[ https://linux-mm.org/OOM_Killer](https://linux-mm.org/OOM_Killer),获取更多关于坏评分是如何计算出来的信息），一旦检测出来，将会杀死进程、释放内存。也就是说我遇到的情况是 ，Nginx 是在申请越来越多的内存，最终内核申请内存失败并且触发OOM Killer，杀死 Nginx 进程。
 
-到此为止，现在让我们看看 Nginx 做了什么当它重新加载新的配置的时候。可以使用 `strace` 做这件事。 这是一个非常棒的工具，能查看程序正在做什么而不用阅读它的源码。
+到此为止，现在让我们看看当 Nginx 重新加载配置的时候做了什么。可以使用 `strace` 进行跟踪。这是一个非常棒的工具，能在不用阅读源码的情况下查看程序正在做什么。
 
-在我这种情况下，执行：
+在我这里，执行：
 
 	sudo strace -p `cat /var/run/nginx.pid` -f
 
@@ -43,7 +46,7 @@ __在[lua-nginx-module][lua-nginx-moduleL1294] 中，一个内存相关的黑魔
 
 	sudo /etc/inid.t/nginx reload
 
-`-f` 选项告诉 `strace` 也要跟踪子进程。 在[http://jvns.ca/zines/#strace-zine.](http://jvns.ca/zines/#strace-zine.)你能看到一个对`strace`非常好的评价。下面是一个非常有趣的片段，执行完上面的命令后从`strace`中输出的。
+`-f` 选项告诉 `strace` 也要对子进程进行跟踪。 在[http://jvns.ca/zines/#strace-zine.](http://jvns.ca/zines/#strace-zine.)你能看到一个对`strace`非常好的评价。下面是一个非常有趣的片段，执行完`strace`后输出的：
 
 
 ```
@@ -84,9 +87,9 @@ __在[lua-nginx-module][lua-nginx-moduleL1294] 中，一个内存相关的黑魔
 
 在 `strace` 的输出中，另一个有意思的细节是分配的内存从来没有执行`munmap`进行释放。注意在调用`close`后`0x7f6dc8266000`才被传入`munmap`。
 
-这些事实让我相信 ，当`lua_ssl_trusted_certificate`这条指令被设置后， Nginx 发生了 内存泄露（尽管我对底层调试几乎没有任何经验）。Nginx 发生了内存泄露，难道那还不让人兴奋？！不要这么兴奋。
+这些事实让我相信 ，当设置`lua_ssl_trusted_certificate`这条指令后，Nginx 发生了 内存泄露（尽管我对底层调试几乎没有任何经验）。什么？Nginx 发生了内存泄露，难道那还不让人兴奋？！不要这么兴奋。
 
-为了找出是Nginx 的那个组件发生了内存泄露，我决定使用 `gdb`。如果编译程序的时候打开了调试符号选项，`gdb`将会非常有用。如上所述，我使用的是 Nginx Openresty 套件， 需要使用下面的命令开启调试符号选项重新编译：
+为了找出是Nginx 的哪个组件发生了内存泄露，我决定使用 `gdb`。如果编译程序的时候打开了调试符号选项，`gdb`将会非常有用。如上所述，我使用的是 Nginx Openresty 套件， 需要使用下面的命令开启调试符号选项重新编译：
 
 	~/openresty-1.11.2.2 $ ./configure -j2 --with-debug --with-openssl=../openssl-1.0.2j/ --with-openssl-opt="-d no-asm -g3 -O0 -fno-omit-frame-pointer -fno-inline-functions"
 
@@ -133,7 +136,7 @@ Reading symbols from /usr/local/openresty/bin/openresty...done.
 
     break open if strcmp($rdi, "/etc/ssl/certs/ca-certificates.crt") == 0
 
-如果你先前没有了解过gdb，gdb 是非常棒的工具，可以使用它添加一个自定义的条件来创建复杂的断点。这里我们告诉`gdb`暂停程序，如果`open`函数被调用并且`rdi`寄存器指向的数据是 `/etc/ssl/certs/ca-certificates.crt` 。我不知道是否还有更好的方式，<!-- 但是我是在观察了多次发现这种添加条件断点的方式 -->我是在反复尝试后，发现`open`函数的第一个参数（文件路径）保存在了`rdi`寄存器。所以才会如此设置断点。现在告诉`gdb`运行程序：
+如果你先前没有了解过gdb，gdb 是非常棒的工具，可以使用它添加一个自定义的条件来创建复杂的断点。这里我们告诉`gdb`暂停程序，如果`open`函数被调用并且`rdi`寄存器指向的数据是 `/etc/ssl/certs/ca-certificates.crt` 。我不知道是否还有更好的方式，<!-- 但是我是在观察了多次发现这种添加条件断点的方式 -->我是在反复尝试后，发现`open`函数的第一个参数（文件路径）保存在了`rdi`寄存器，所以才会如此设置断点。现在告诉`gdb`运行程序：
 
     (gdb) run
 
@@ -169,7 +172,7 @@ Breakpoint 1, open64 () at ../sysdeps/unix/syscall-template.S:81
 
 
 真令人兴奋，`gdb`向我们展示了完整的函数调用栈及参数！查看此刻寄存器中的数据，可以用 `info registers`命令。为了更好的理解调用栈，我查看了一下 `Nginx`的内部工作流程（我记得Openresty仅仅是组装了一些额外的模块的Nginx）。Nginx 内部所有的（除了Nginx 核心）都被实现为模块，这些模块注册 handlers 和 filters。Nginx 的配置文件主要有三个主要的块组成，分别是main、server、location。
-假设您的自定义Nginx模块引入了一个新的配置指令，那么您还需要注册一个处理程序（handler）来处理该指令的配置的值。因此整个过程如下 Nginx 解析配置文件，每一个配置部分解析后，就会调用注册的相应处理程序。下面是`ua-nginx-module`（Openresty Nginx 组件的核心模块）的实现：
+假设您的自定义Nginx模块引入了一个新的配置指令，那么您还需要注册一个处理程序（handler）来处理该指令的配置的值。因此整个过程如下 Nginx 解析配置文件，每一个配置部分解析后就会调用注册的相应处理程序。下面是`lua-nginx-module`（Openresty Nginx 组件的核心模块）的实现：
 
 ```c
 
@@ -197,7 +200,7 @@ ngx_http_module_t ngx_http_lua_module_ctx = {
 ```
 
 
-这里是 Nginx 模块注册他的处理程序。从注释中你也可以看到，Nginx 解析出来一个 location 配置 就会调用 `ngx_http_lua_merge_loc_conf ` 将配置和 main 块合并。回到我们的上面的`gdb`输出,可以看到`#13`就是这个函数调用。默认这个函数将会被调用对于每一个 location 块配置。通过[源码](https://github.com/openresty/lua-nginx-module/blob/master/src/ngx_http_lua_module.c#L1093)我们可以看到这个函数直接去读去配置值、继承server中的配置条目、设置默认值。如果设置了`lua_ssl_trusted_certificate `指令，可以看到其中调用了`ngx_http_lua_set_ssl`,在其内部又调用了Nginx SSL 模块的 `ngx_ssl_trusted_certificate`。`ngx_ssl_trusted_certificate` 是一个非常简单的函数，对于给定的配置块（一个location 块），设置SSL 环境(context)的验证深度，调用另外一个 OpenSSL API 加载验证文件（还有一些错误处理）。
+这里是 Nginx 模块注册的处理程序。从注释中你也可以看到，Nginx 解析出来一个 location 配置 就会调用 `ngx_http_lua_merge_loc_conf ` 将配置和 main 块合并。回到我们的上面的`gdb`输出,可以看到`#13`就是这个函数调用。默认情况下对于每一个 location 块配置这个函数将会被调用。通过[源码](https://github.com/openresty/lua-nginx-module/blob/master/src/ngx_http_lua_module.c#L1093)我们可以看到这个函数直接去读去配置值、继承server中的配置条目、设置默认值。如果设置了`lua_ssl_trusted_certificate `指令，可以看到其中调用了`ngx_http_lua_set_ssl`,在其内部又调用了Nginx SSL 模块的 `ngx_ssl_trusted_certificate`。`ngx_ssl_trusted_certificate` 是一个非常简单的函数，对于给定的配置块（一个location 块），设置SSL 环境(context)的验证深度，调用另外一个 OpenSSL API 加载验证文件（还有一些错误处理）。
 
 ```
 
@@ -236,7 +239,12 @@ ngx_http_module_t ngx_http_lua_module_ctx = {
 
 ```
 
-Nginx SSL 模块的完整代码在[这里](http://lxr.nginx.org/source/src/event/ngx_event_openssl.c)能找到。现在我们已经走到调用栈的一半了，并且走出了 Nginx的世界。下一个函数调用是`SSL_CTX_load_verify_locations`，来自于 OpenSSL。程序在这里程序打开了信任的验证文件，并且暂停。接下来将会读取文件（根据上面的`strace`输出）。由于我最初的目的就是找出是谁调用了令人奇怪的`mmap` 调用，很自然的下一个断点就是:
+Nginx SSL 模块的完整代码在[这里](http://lxr.nginx.org/source/src/event/ngx_event_openssl.c)能找到。
+
+现在我们已经走到调用栈的一半了，并且走出了 Nginx的世界。下一个函数调用是`SSL_CTX_load_verify_locations`，来自于 OpenSSL。程序在这里程序打开了信任的验证文件，并且暂停。接下来将会读取文件（根据上面的`strace`输出）。
+
+
+由于我最初的目的就是找出是谁调用了令人奇怪的`mmap` 调用，很自然的下一个断点就是:
 
     (gdb) b mmap
 
@@ -268,7 +276,19 @@ Breakpoint 3, mmap64 () at ../sysdeps/unix/syscall-template.S:81
 
 ```
 
-此刻我异常兴奋。我“发现”了一个OpenSSL内存泄露！带着异常兴奋的情绪，我开始阅读理解 上个世纪90年代就开发的 OpenSSL 的[代码](https://github.com/openssl/openssl/blob/master/crypto/x509/by_file.c#L2)。如此高兴，接下来的几天几夜去理解这写函数并且试图找到我非常确定的函数中的内存泄露。看了许多给 OpenSSL 的内存泄露bug（尤其是和上面这个函数相关的）后，我信心大增，因此我有花了几天几夜去捉这个臭虫！基本上这些函数做的事情是 首先打开受信任的证书文件，分配缓冲（4096字节），从文件中读取 4KB 内容到缓冲区，解密数据，转换成 OpenSSL 的内部表示，保存到给定的SSL context的[证书存储区](https://github.com/openssl/openssl/blob/75e314f2d573d4f984ff6a371be7a4966bf5f4c5/crypto/x509/by_file.c#L211)（这个属于一个 location 块上下文环境）。因此以后无论何时，在这个`location`块中，当Nginx需要验证SSL 客户端证书的时候，都将会调用OpneSSL 中的`SSL_get_verify_result`传递开始保存保存的 SSL context。接着那个函数将会使用已经加载的和内部初始化的受信任证书验证客户端。这就是日日夜夜学习的那些所有的事情如何在一起工作的收获，但是没有发现一个bug。也了解到`mmap`是被在`CRYPTO_malloc `触发的`malloc`调用的，`CRYPTO_malloc`是另一个OpenSSL 函数，用来扩展证书存储大小，使其可以适应解密和内部初始化的证书数据。现在我已经知道究竟发生了什么，我意识到不会释放所分配的内存，因为OpenSSL在这个进程生命周期中的可能会有使用。__但是这个主要的问题 ，当lua_ssl_trusted_certificate  指令配置后，为什 么 Nginx 消耗的内存增长如此之快，还是一个谜。__ 从我手中掌握的已有数据来看是每个 location 块中的 `mmap`导致了这个问题。现在我决定提出 Openresty/Nginx 中的相关代码，用相同的 OpenSSL API 写一个独立C程序加载配置文件。重复调用用来模拟多个 location 块（我这里是5000个）:
+此刻我异常兴奋。我“发现”了一个OpenSSL内存泄露！带着异常兴奋的情绪，我开始阅读理解 上个世纪90年代就开发的 OpenSSL 的[代码](https://github.com/openssl/openssl/blob/master/crypto/x509/by_file.c#L2)。如此高兴，接下来的几天几夜去理解这写函数并且试图找到我非常确定的函数中的内存泄露。看了许多给 OpenSSL 的内存泄露bug（尤其是和上面这个函数相关的）后，我信心大增，因此我有花了几天几夜去捉这个臭虫！
+
+基本上这些函数做的事情是 首先打开受信任的证书文件，分配缓冲（4096字节），从文件中读取 4KB 内容到缓冲区，解密数据，转换成 OpenSSL 的内部表示，保存到给定的SSL context的[证书存储区](https://github.com/openssl/openssl/blob/75e314f2d573d4f984ff6a371be7a4966bf5f4c5/crypto/x509/by_file.c#L211)（这个属于一个 location 块上下文环境）。因此以后无论何时，在这个`location`块中，当Nginx需要验证SSL 客户端证书的时候，都将会调用OpneSSL 中的`SSL_get_verify_result`传递开始保存保存的 SSL context。接着那个函数将会使用已经加载的和内部初始化的受信任证书验证客户端。
+
+这就是日日夜夜学习的那些所有的事情如何在一起工作的收获，但是没有发现一个bug。
+
+也了解到`mmap`是被在`CRYPTO_malloc `触发的`malloc`调用的，`CRYPTO_malloc`是另一个OpenSSL 函数，用来扩展证书存储大小，使其可以适应解密和内部初始化的证书数据。现在我已经知道究竟发生了什么，其不会释放所分配的内存，因为OpenSSL在这个进程生命周期中的后面可能会使用。
+
+__但是这个主要的问题 ，当lua_ssl_trusted_certificate  指令配置后，为什 么 Nginx 消耗的内存增长如此之快，还是一个谜。__ 
+
+从我手中掌握的已有数据来看是每个 location 块中的 `mmap`导致了这个问题。现在我决定提出 Openresty/Nginx 中的相关代码，用相同的 OpenSSL API 写一个独立C程序加载配置文件。
+
+反复调用模拟多个 location 块（我这里是5000个）:
 
 ```
 
@@ -349,7 +369,24 @@ read(3, "CydAXFJy3SuCvkychVSa1ZC+N\n8f+mQA"..., 4096) = 4096
 
 ```
 
-`brk` 调用后面没有 `mmap` 调用，内存消耗也没有按照超出预期的增长！好吧，我现在非常恼火也想放弃。但是我我的好奇心没让我放弃。我决定了解更多的关于内存分配如何工作的。通常来说当程序中申请更多的内存的时候会调用glibc中的`malloc`(或者改版)。对于用户空间的程序，`glibc`抽象了很多内存管理的工作、提供了一个使用虚拟内存的 API 。默认情况下，当一个程序调用`malloc`的申请更多的堆上内存时候，将会使用`brk`申请需要的内存空间。如果堆上有洞，brk将不能正常工作。现在假设你有1G的堆上内存空闲空间。在上面直接创建一个洞，可以使用mmap指定具体地址A 这种方式，指定内存空间大小。这样mmap就会从堆上的内存地址A开始，申请指定大小的内存空间。但是因为break还在堆开始的地方,如果使用`sbrk`函数申请的B > A 字节大小的内存空间，此次请求将会失败，因为`brk`尝试申请的一部分内存区域已经被分配（洞）。这时候`malloc`会使用`mmap`代替申请内存空间。因为`mmap`调用代价非常高，为了降低其调用次数，malloc 申请 1M内存即使申请分配的内存不足1M。[https://code.woboq.org/userspace/glibc/malloc/malloc.c.html#406](https://code.woboq.org/userspace/glibc/malloc/malloc.c.html#406)实现注释文档中也有记载。你会发现上面的输出日志中，令人奇怪的`mmap`调用申请1048576字节内存，正好是1M--`malloc`使用的默认值去调用mmap,当brk失败后。高潮来了！！！把这些线索放一起。一个明显的猜想是 __`brk` 调用后面是mmap调用在Openresty 上下文环境中，但是在独立的c中却不是，因为 Openresty 在配置文件加载之前 在某个地方创建了一个洞。__ 使用grep 命令在PRs,issus和[lua-nginx-module](https://github.com/openresty/lua-nginx-module)源码中，这不难找到。最后发现Luajit 需要工作在低地址空间获得更高的效率，这是为什么`lua-nginx-module`那群家伙决定在程序开始执行之前执行下面这段代码：
+`brk` 调用后面没有 `mmap` 调用，内存消耗也没有按照超出预期的增长！
+
+好吧，我现在非常恼火也想放弃。但是我我的好奇心没让我放弃。我决定了解更多的关于内存分配如何工作的。
+
+通常来说当程序中申请更多的内存的时候会调用glibc中的`malloc`(或者改版)。对于用户空间的程序，`glibc`抽象了很多内存管理的工作、提供了一个使用虚拟内存的 API 。
+
+默认情况下，当一个程序调用`malloc`的申请更多的堆上内存时候，将会使用`brk`申请需要的内存空间。如果堆上有洞，brk将不能正常工作。
+
+现在假设你有1G的堆上内存空闲空间。在上面直接创建一个洞，可以使用mmap指定具体地址A 这种方式，指定内存空间大小。这样mmap就会从堆上的内存地址A开始，申请指定大小的内存空间。
+
+但是因为程序中断点还在堆开始的地方,这时如果使用`sbrk`函数申请的B > A 字节大小的内存空间，此次请求将会失败，因为`brk`尝试申请的一部分内存区域已经被分配（洞）。这时候`malloc`会使用`mmap`代替申请内存空间。
+
+因为`mmap`调用代价非常高，为了降低其调用次数，malloc 申请 1M内存即使申请分配的内存不足1M。[https://code.woboq.org/userspace/glibc/malloc/malloc.c.html#406](https://code.woboq.org/userspace/glibc/malloc/malloc.c.html#406) 注释文档中也有记载。你会发现上面的输出日志中，令人奇怪的`mmap`调用申请1048576字节内存，正好是1M--当brk失败后，`malloc`使用此默认值去调用mmap。
+
+高潮来了！！！把这些线索放一起。一个明显的猜想是 __`brk` 调用后面是mmap调用在Openresty 上下文环境中，但是在独立的c中却不是，因为 Openresty 在配置文件加载之前 在某个地方创建了一个洞。__ 
+
+
+这不难验证，使用grep 命令在PRs,issus和[lua-nginx-module](https://github.com/openresty/lua-nginx-module)源码中查找。最后发现Luajit 需要工作在低地址空间获得更高的效率，这是为什么`lua-nginx-module`那群家伙决定在程序开始执行之前执行下面这段代码：
 
 ```
 if (sbrk(0) < (void *) 0x40000000LL) {
@@ -359,7 +396,9 @@ if (sbrk(0) < (void *) 0x40000000LL) {
 ```
 
 
-完整代码可以在[仓库](https://github.com/openresty/lua-nginx-module/blob/37e5362088bd659e318aae568b268719bd0d6707/src/ngx_http_lua_module.c#L1291)中找到。现在我还没太弄明白这段代码是如何让luajit拥有低地址空间的（如果有人能在评论里面解释清楚，我将非常感激），但是这确实是导致这个问题的代码。为了证明，我拷贝出来这段代码到我的 独立 C 程序中：
+完整代码可以在[仓库](https://github.com/openresty/lua-nginx-module/blob/37e5362088bd659e318aae568b268719bd0d6707/src/ngx_http_lua_module.c#L1291)中找到。现在我还没太弄明白这段代码是如何让luajit拥有低地址空间的（如果有人能在评论里面解释清楚，我将非常感激），但是这确实是导致这个问题的代码。
+
+为了证明，我拷贝出来这段代码到我的 独立 C 程序中：
 
 ```c
 
@@ -426,7 +465,9 @@ int main() {
 ```
 
 
-当我编译运行这段程序的时候，通过`strace`我能看到和Openresty环境中相同的行为。为了更进一步的确认，我编辑Opneresty的源码、注释掉`ngx_http_lua_limit_data_segment`、重新编译运行，内存增长的现象没有发生。搞定！！！
+当我编译运行这段程序的时候，通过`strace`我能看到和Openresty环境中相同的行为。为了更进一步的确认，我编辑Opneresty的源码、注释掉`ngx_http_lua_limit_data_segment`、重新编译运行，内存增长的现象没有发生。
+
+搞定！！！
 
 上面就是我这次的收获。根据这次结果，我提交了一个[issue](https://github.com/openresty/lua-nginx-module/issues/1005)。当你有很多的location 块的时候，这真的会成为一个问题。例如加入你有一个很大的 Nginx 配置文件，里面有超过4k 个location 块，然后你加入了`lua_ssl_trusted_certificate`指令到 mian 配置块，然后当你 reload/restart/start Nginx 的时候，内存消耗将会增长到~4G(4k * 1MB)并且不会释放。
 
